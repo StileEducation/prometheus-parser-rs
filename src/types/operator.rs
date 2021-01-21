@@ -412,33 +412,47 @@ impl fmt::Display for Operator {
 /// This is a subset of [Operator]s. With the "bool" modifier expressions act
 /// as a boolean operator, returning a boolean value.
 #[derive(Debug, PartialEq, Clone)]
-pub struct BoolOperator(Operator);
+pub struct BoolOperator {
+    /// This Operator's function (multiply, divide, power, equals, etc)
+    pub kind: OperatorKind,
+
+    /// The left-hand-side expression
+    pub lhs: BExpression,
+  
+    /// The right-hand-side expression
+    pub rhs: BExpression,
+  
+    /// An optional matching clause for this operator (`on(...)`, `ignoring(...)`)
+    pub matching: Option<Matching>,
+  
+    pub span: Option<Span>
+}
 
 impl BoolOperator {
   pub fn new(kind: OperatorKind, lhs: Expression, rhs: Expression) -> Self {
-    BoolOperator(Operator {
+    Self {
       kind,
       lhs: Box::new(lhs),
       rhs: Box::new(rhs),
       matching: None,
       span: None
-    })
+    }
   }
 
   /// Sets or replaces this Operator's Matching clause
   pub fn matching(mut self, matching: Matching) -> Self {
-    self.0.matching = Some(matching);
+    self.matching = Some(matching);
     self
   }
 
   /// Clears this Operator's Matching clause, if any
   pub fn clear_matching(mut self) -> Self {
-    self.0.matching = None;
+    self.matching = None;
     self
   }
 
   pub fn span<S: Into<Span>>(mut self, span: S) -> Self {
-    self.0.span = Some(span.into());
+    self.span = Some(span.into());
     self
   }
 
@@ -452,8 +466,8 @@ impl BoolOperator {
     // https://www.robustperception.io/using-group_left-to-calculate-label-proportions
 
     // binary operator exprs can only contain (and return) instant vectors
-    let lhs_ret = self.0.lhs.return_value();
-    let rhs_ret = self.0.rhs.return_value();
+    let lhs_ret = self.lhs.return_value();
+    let rhs_ret = self.rhs.return_value();
 
     // operators can only have instant vectors or scalars
     if !lhs_ret.kind.is_operator_valid() {
@@ -473,7 +487,7 @@ impl BoolOperator {
     let mut label_ops;
 
     if lhs_ret.kind.is_scalar() && rhs_ret.kind.is_scalar() {
-      label_ops = vec![LabelSetOp::clear(self.clone().wrap(), self.0.span)];
+      label_ops = vec![LabelSetOp::clear(self.clone().wrap(), self.span)];
     } else if lhs_ret.kind.is_scalar() {
       // lhs is scalar, so pull labels from the rhs
       label_ops = rhs_ret.label_ops;
@@ -487,7 +501,7 @@ impl BoolOperator {
       // set of metrics1
       
       // on/ignoring clauses don't affect labels themselves, but a group_* may
-      if let Some(matching) = &self.0.matching {
+      if let Some(matching) = &self.matching {
         if let Some(group) = &matching.group {
           match &group.op {
             MatchingGroupOp::Left => label_ops = lhs_ret.label_ops,
@@ -512,21 +526,17 @@ impl BoolOperator {
 
     ReturnValue { kind: ReturnKind::Scalar, label_ops }
   }
-
-  pub(crate) fn wrap_operator(op: Operator) -> Self {
-    Self(op)
-  }
 }
 
 impl fmt::Display for BoolOperator {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{} {} bool", self.0.lhs, self.0.kind)?;
+    write!(f, "{} {} bool", self.lhs, self.kind)?;
 
-    if let Some(matching) = &self.0.matching {
+    if let Some(matching) = &self.matching {
       write!(f, " {}", matching)?;
     }
 
-    write!(f, " {}", self.0.rhs)?;
+    write!(f, " {}", self.rhs)?;
 
     Ok(())
   }

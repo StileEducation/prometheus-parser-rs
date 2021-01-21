@@ -436,19 +436,26 @@ impl PrometheusParser {
       }
     }
 
-    let op = Operator {
-      kind,
-      lhs: Box::new(lhs),
-      rhs: Box::new(rhs),
-
-      matching: matching_clause,
-
-      span
-    };
     if is_bool_op {
-      Ok(Expression::BoolOperator(BoolOperator::wrap_operator(op)))
+      Ok(Expression::BoolOperator(BoolOperator {
+        kind,
+        lhs: Box::new(lhs),
+        rhs: Box::new(rhs),
+
+        matching: matching_clause,
+
+        span
+      }))
     } else {
-      Ok(Expression::Operator(op))
+      Ok(Expression::Operator(Operator {
+        kind,
+        lhs: Box::new(lhs),
+        rhs: Box::new(rhs),
+
+        matching: matching_clause,
+
+        span
+      }))
     }
   }
 
