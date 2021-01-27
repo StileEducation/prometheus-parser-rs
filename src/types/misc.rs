@@ -1,6 +1,6 @@
 // (C) Copyright 2019-2020 Hewlett Packard Enterprise Development LP
 
-use std::{cmp::{self, Ordering}, fmt};
+use std::{cmp::Ordering, fmt};
 
 /// A byte-index tuple representing a span of characters in a string
 ///
