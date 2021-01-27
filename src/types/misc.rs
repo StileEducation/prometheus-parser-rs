@@ -1,6 +1,6 @@
 // (C) Copyright 2019-2020 Hewlett Packard Enterprise Development LP
 
-use std::fmt;
+use std::{cmp::{self, Ordering}, fmt};
 
 /// A byte-index tuple representing a span of characters in a string
 ///
@@ -89,6 +89,55 @@ impl fmt::Display for PromDuration {
 
     write!(f, "{}{}", v, self.as_char())
   }
+}
+
+impl PartialOrd for PromDuration {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PromDuration {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (PromDuration::Seconds(left), PromDuration::Seconds(right)) => left.cmp(right),
+            (PromDuration::Seconds(_), PromDuration::Minutes(_)) => Ordering::Less,
+            (PromDuration::Seconds(_), PromDuration::Hours(_)) => Ordering::Less,
+            (PromDuration::Seconds(_), PromDuration::Days(_)) => Ordering::Less,
+            (PromDuration::Seconds(_), PromDuration::Weeks(_)) => Ordering::Less,
+            (PromDuration::Seconds(_), PromDuration::Years(_)) => Ordering::Less,
+            (PromDuration::Minutes(_), PromDuration::Seconds(_)) => Ordering::Greater,
+            (PromDuration::Minutes(left), PromDuration::Minutes(right)) => left.cmp(right),
+            (PromDuration::Minutes(_), PromDuration::Hours(_)) => Ordering::Less,
+            (PromDuration::Minutes(_), PromDuration::Days(_)) => Ordering::Less,
+            (PromDuration::Minutes(_), PromDuration::Weeks(_)) => Ordering::Less,
+            (PromDuration::Minutes(_), PromDuration::Years(_)) => Ordering::Less,
+            (PromDuration::Hours(_), PromDuration::Seconds(_)) => Ordering::Greater,
+            (PromDuration::Hours(_), PromDuration::Minutes(_)) => Ordering::Greater,
+            (PromDuration::Hours(left), PromDuration::Hours(right)) => left.cmp(right),
+            (PromDuration::Hours(_), PromDuration::Days(_)) => Ordering::Less,
+            (PromDuration::Hours(_), PromDuration::Weeks(_)) => Ordering::Less,
+            (PromDuration::Hours(_), PromDuration::Years(_)) => Ordering::Less,
+            (PromDuration::Days(_), PromDuration::Seconds(_)) => Ordering::Greater,
+            (PromDuration::Days(_), PromDuration::Minutes(_)) => Ordering::Greater,
+            (PromDuration::Days(_), PromDuration::Hours(_)) => Ordering::Greater,
+            (PromDuration::Days(left), PromDuration::Days(right)) => left.cmp(right),
+            (PromDuration::Days(_), PromDuration::Weeks(_)) => Ordering::Less,
+            (PromDuration::Days(_), PromDuration::Years(_)) => Ordering::Less,
+            (PromDuration::Weeks(_), PromDuration::Seconds(_)) => Ordering::Greater,
+            (PromDuration::Weeks(_), PromDuration::Minutes(_)) => Ordering::Greater,
+            (PromDuration::Weeks(_), PromDuration::Hours(_)) => Ordering::Greater,
+            (PromDuration::Weeks(_), PromDuration::Days(_)) => Ordering::Greater,
+            (PromDuration::Weeks(left), PromDuration::Weeks(right)) => left.cmp(right),
+            (PromDuration::Weeks(_), PromDuration::Years(_)) => Ordering::Less,
+            (PromDuration::Years(_), PromDuration::Seconds(_)) => Ordering::Greater,
+            (PromDuration::Years(_), PromDuration::Minutes(_)) => Ordering::Greater,
+            (PromDuration::Years(_), PromDuration::Hours(_)) => Ordering::Greater,
+            (PromDuration::Years(_), PromDuration::Days(_)) => Ordering::Greater,
+            (PromDuration::Years(_), PromDuration::Weeks(_)) => Ordering::Greater,
+            (PromDuration::Years(left), PromDuration::Years(right)) => left.cmp(right)
+        }
+    }
 }
 
 /// A Subquery which converts an instant vector to a range vector by repeatedly
